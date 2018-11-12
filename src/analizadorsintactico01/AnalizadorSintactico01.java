@@ -1,9 +1,11 @@
 package analizadorsintactico01;
 
-import analizadorLexico.Lexer;
+import analizadorLexico.TipoToken;
 import analizadorLexico.Token;
-import java.io.IOException;
-import java.io.StringReader;
+import analizadorLexico.frontend.Analizador;
+import analizadorSintactico.backend.AutomataPila;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
@@ -15,60 +17,26 @@ public class AnalizadorSintactico01 {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        String input = "aaaababb abb\n"
-                + "aaab\n"
-                + "baababab\n"
-                + "abababb\n"
-                + "babbbbbbabb\n"
-                + "asdasd\n"
-                + "abaaabb 02300\n"
-                + "\n"
-                + "sumando = 25\n"
-                + "id = sumando + 32.25\n"
-                + "//un comentario\n"
-                + "ESCRIBIR\n"
-                + "FIN\n"
-                + "ENTONCES\n"
-                + "\"Una literal\"\n"
-                + "25as.dasds3 = sumando2.";
-
-        boolean seguir = true;
-        Lexer analizador = new Lexer(new StringReader(input));
-        while (seguir) {
-            try {
-                Token miToken = analizador.yylex();
-                if (miToken == null) {
-                    seguir = false;
-                    break;
-                }
-                switch (miToken) {
-                    case ERROR:
-                        System.out.printf("Se encontro un error, lexema: [%s]\n", analizador.yytext());
-                        break;
-                    case IDENTIFICADOR:
-                    case LITERAL:
-                    case NUMERO:
-                    case COMENTARIO:
-                    case ESCRIBIR:
-                    case FIN:
-                    case REPETIR:
-                    case INICIAR:
-                    case SI:
-                    case VERDADERO:
-                    case FALSO:
-                    case ENTONCES:
-                        System.out.printf("token del tipo [%s], lexema es [%s]\n", miToken.getNombreToken(), analizador.getLexema());
-                        break;
-                    default:
-                        System.out.printf("token del tipo [%s], solo hay un lexema el cual es [%s]\n", miToken.getNombreToken(), analizador.yytext());
-                        break;
-                }
-            } catch (IOException e) {
-                seguir = false;
-                break;
-            }
-
-        }
+//        Analizador analizador = new Analizador();
+//        analizador.setVisible(true);
+//        
+        Token token1 = new Token(TipoToken.ESCRIBIR, TipoToken.ESCRIBIR.getNombreToken(), 0, 0);
+        Token token2 = new Token(TipoToken.LITERAL, "algo", 0, 0);
+        Token token3 = new Token(TipoToken.NUMERO, "10", 0, 0);
+        Token token4 = new Token(TipoToken.IDENTIFICADOR, "id", 0, 0);
+        Token token5 = new Token(TipoToken.FIN, TipoToken.FIN.getNombreToken(), 0, 0);
+        List<Token> lista = new LinkedList<>();
+        lista.add(token1);
+        lista.add(token3);
+        lista.add(token5);
+//        lista.add(token1);
+//        lista.add(token4);
+//        lista.add(token5);
+//        lista.add(token1);
+//        lista.add(token2);
+//        lista.add(token5);
+//        
+        AutomataPila ap = new AutomataPila(lista);
+        ap.iniciarAPD();
     }
-
 }

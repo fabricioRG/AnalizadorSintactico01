@@ -27,15 +27,15 @@ public class AnalizadorSintactico01 {
         Token token5 = new Token(TipoToken.FIN, TipoToken.FIN.getNombreToken(), 0, 0);
         List<Token> lista = new LinkedList<>();
         lista.add(token1);
-        lista.add(token3);
-        lista.add(token5);
-//        lista.add(token1);
-//        lista.add(token4);
-//        lista.add(token5);
-//        lista.add(token1);
 //        lista.add(token2);
 //        lista.add(token5);
-//        
+//        lista.add(token1);
+//        lista.add(token3);
+//        lista.add(token5);
+//        lista.add(token1);
+//        lista.add(token4);
+        lista.add(token5);
+        
         AutomataPila ap = new AutomataPila(lista);
         ap.iniciarAPD();
     }

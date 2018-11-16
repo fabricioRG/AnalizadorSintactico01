@@ -2,6 +2,11 @@ package analizadorLexico.backend;
 
 import analizadorLexico.frontend.AreaTexto;
 import analizadorLexico.tokens.frontend.TablaTokens;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.util.List;
 import javax.swing.JOptionPane;
 import net.htmlparser.jericho.Renderer;
 import net.htmlparser.jericho.Segment;
@@ -105,6 +110,18 @@ public class ManejadorAreaTexto {
         at.getjEditorPane1().setText(textoFinal);
         at.getjLabelCadena().setText(cadenaABuscar);
         at.getjLabelCoincidencias().setText(Integer.toString(buscador.getCoincidencias()));
+    }
+    
+    public boolean existenErrores(){
+        if(aut.getListaErrores().isEmpty()){
+            return false;
+        } else {
+            return true;
+        }
+    }
+ 
+    public List getListaTokens(){
+        return aut.getListaTokens();
     }
     
 }

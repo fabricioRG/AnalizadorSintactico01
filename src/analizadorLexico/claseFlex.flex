@@ -21,7 +21,7 @@ Digito = [1-9][0-9]*
 Negativo = [-]{Digito}
 Identificador = ([_]|{Letra})({Letra}|{Digito}|[-]|[_])*
 Numero = {Digito} | {Negativo} | "0"
-Literal = "\"" {InputCharacter}* "\"" 
+Literal = "\""([^"\""\\\n]|\\.)*"\""
 
 %{
     private String lexema;

@@ -12,8 +12,6 @@ import java.util.Stack;
  */
 public class AutomataPila {
 
-    private Stack<Token> pila = null;
-    private Stack<TipoToken> pilaLexemas = null;
     private Stack<TipoToken> pilaSistema = null;
     private Stack<TipoToken> pilaAuxiliar = null;
     private List<Token> errores = null;
@@ -22,7 +20,11 @@ public class AutomataPila {
     private int counterTemporalSystem = 0;
     private int counterTemporalSystemAux = 0;
     private int counterOptions = 0;
+    private int counterEscribir = 0;
     private boolean subproceso = false;
+    private int numeroRepetir = 0;
+    private String textoSalida = "";
+    private List<String> listaSalida = null;
     public static final TipoToken[] escribir1 = {TipoToken.FIN, TipoToken.LITERAL, TipoToken.ESCRIBIR};
     public static final TipoToken[] escribir2 = {TipoToken.FIN, TipoToken.NUMERO, TipoToken.ESCRIBIR};
     public static final TipoToken[] escribir3 = {TipoToken.FIN, TipoToken.IDENTIFICADOR, TipoToken.ESCRIBIR};
@@ -30,22 +32,19 @@ public class AutomataPila {
     public static final TipoToken[] repetir2 = {TipoToken.FIN, TipoToken.INICIAR, TipoToken.IDENTIFICADOR, TipoToken.REPETIR};
     public static final TipoToken[] condicional1 = {TipoToken.FIN, TipoToken.ENTONCES, TipoToken.VERDADERO, TipoToken.SI};
     public static final TipoToken[] condicional2 = {TipoToken.FIN, TipoToken.ENTONCES, TipoToken.FALSO, TipoToken.SI};
+    private boolean verdadero = false;
     private List<Token> tokens = null;
-    private List<ErrorSintactico> errors = null;
     public static final NoTerminal NO_TERMINAL_INICIAL = NoTerminal.S;
     public static final TipoToken TIPO_TOKEN_FINAL = TipoToken.FIN;
     private NoTerminal noTerminal = NO_TERMINAL_INICIAL;
-    private int posicion = 0;
     private int option = 0;
 
     public AutomataPila(List tokens) {
-        this.pila = new Stack<Token>();
-        this.pilaLexemas = new Stack<>();
         this.tokens = tokens;
-        this.errors = new LinkedList<>();
         this.pilaSistema = new Stack<>();
         this.pilaAuxiliar = new Stack<>();
         this.errores = new LinkedList<>();
+        this.listaSalida = new LinkedList<>();
     }
 
     /**
@@ -54,6 +53,11 @@ public class AutomataPila {
      */
     public void iniciarAPD() {
         try {
+            if(!subproceso){
+                listaSalida.clear();
+                numeroRepetir = 0;
+                verdadero = false;
+            }
             noTerminal = NO_TERMINAL_INICIAL;
             if (counterSystem < tokens.size()) {
                 obtenerPila();
@@ -69,6 +73,7 @@ public class AutomataPila {
             System.out.println(e.getMessage());
             pilaSistema.clear();
             counterOptions++;
+            counterEscribir++;
             iniciarAPD();
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -130,11 +135,13 @@ public class AutomataPila {
             case S2P:
                 noTerminal = NoTerminal.S2BP;
                 iniciarProceso();
+                option = 1;
                 noTerminal = NoTerminal.S2TP;
                 break;
             case S2BP:
                 option = 0;
                 terminal();
+                numeroRepetir = Integer.parseInt(tokens.get(counterTemporalSystem - 1).getLexema());
                 break;
             case S2TP:
                 terminal();
@@ -142,9 +149,30 @@ public class AutomataPila {
                 noTerminal = NoTerminal.S2CP;
                 break;
             case S2CP:
-                
+                Token toke = tokens.get(counterTemporalSystem);
+                if (toke.getTipoToken() == TipoToken.ESCRIBIR) {
+                    option = 1;
+                    noTerminal = NoTerminal.S2QP;
+                    iniciarProceso();
+                }
+                option = 2;
+                pilaSistema.push(TIPO_TOKEN_FINAL);
+                terminal();
+                escribir();
+                subproceso = false;
+                break;
             case S2QP:
-            
+                counterSystem = counterTemporalSystem;
+                subproceso = true;
+                iniciarAPD();
+                Token token1 = tokens.get(counterTemporalSystem);
+                if (token1.getTipoToken() == TipoToken.ESCRIBIR) {
+                    counterSystem = counterTemporalSystem;
+                    subproceso = true;
+                    option = 1;
+                    noTerminal = NoTerminal.S2QP;
+                }
+                break;
             case S3:
                 terminal();
                 option = 1;
@@ -165,6 +193,7 @@ public class AutomataPila {
             case S3TP:
                 Token tok = tokens.get(counterTemporalSystem);
                 if (tok.getTipoToken() == TipoToken.ESCRIBIR) {
+                    counterEscribir = 0;
                     counterSystem = counterTemporalSystem;
                     subproceso = true;
                     iniciarAPD();
@@ -172,31 +201,45 @@ public class AutomataPila {
                 pilaSistema.push(TIPO_TOKEN_FINAL);
                 option = 2;
                 terminal();
+                escribir();
                 subproceso = false;
                 break;
             case S4:
+
+            case M:
+
+            case O:
+
             case S5:
+
         }
         if (option == 1) {
             iniciarProceso();
         }
-        if (option == 2 || option == 3) {
-            if (option == 2) {
-                System.out.println("########Cadena correcta########");
-                counterOptions = 0;
-            } else if (option == 3) {
-                System.out.println("######Cadena no correcta######");
-            }
-            counterSystem = counterTemporalSystem;
-            if (!subproceso) {
+        if (!subproceso) {
+            if (option == 2 || option == 3) {
+                if (option == 2) {
+                    System.out.println("########Cadena correcta########");
+                    counterOptions = 0;
+                    counterEscribir = 0;
+                } else if (option == 3) {
+                    System.out.println("######Cadena no correcta######");
+                }
+                counterSystem = counterTemporalSystem;
                 if (counterSystem >= tokens.size()) {
                     System.out.println("##Se ha terminado la lectura##");
+                    System.out.println(textoSalida);
                     for (Token err : errores) {
                         System.out.println("Error: " + err.getTipoToken());
                     }
                 } else {
                     iniciarAPD();
                 }
+            }
+        } else {
+            if(option == 2){
+                counterOptions = 0;
+                counterEscribir = 0;
             }
         }
     }
@@ -205,7 +248,7 @@ public class AutomataPila {
         Token token = tokens.get(counterSystem);
         switch (token.getTipoToken()) {
             case ESCRIBIR:
-                switch (counterOptions) {
+                switch (counterEscribir) {
                     case 0:
                         crearPila(escribir1);
                         break;
@@ -217,7 +260,7 @@ public class AutomataPila {
                         break;
                     default:
                         counterSystem++;
-                        counterOptions = 0;
+                        counterEscribir = 0;
                         errores.add(token);
                         throw new Exception("Se encontro un nuevo error");
                 }
@@ -231,8 +274,10 @@ public class AutomataPila {
                         crearPila(repetir2);
                         break;
                     default:
-                        break;
-
+                        counterSystem++;
+                        counterOptions = 0;
+                        errores.add(token);
+                        throw new Exception("Se encontro un nuevo error");
                 }
                 break;
             case SI:
@@ -271,6 +316,13 @@ public class AutomataPila {
             Token token = tokens.get(counterTemporalSystem);
             System.out.println(token.getTipoToken());
             if (pilaSistema.peek() == token.getTipoToken()) {
+                if (token.getTipoToken() == TipoToken.LITERAL) {
+                    escribir(token.getLexema());
+                } else if (token.getTipoToken() == TipoToken.NUMERO && (noTerminal == NoTerminal.S1BP)) {
+                    escribir("\"" + token.getLexema() + "\"");
+                } else if (token.getTipoToken() == TipoToken.VERDADERO){
+                    verdadero = true;
+                }
                 pilaSistema.pop();
                 counterTemporalSystem++;
             } else {
@@ -281,6 +333,28 @@ public class AutomataPila {
             errores.add(tokens.get(counterSystem));
             counterSystem++;
             throw new Exception("////Nuevo error\\\\\\\\");
+        }
+    }
+
+    private void escribir(String entrada) {
+        String texto = entrada.substring(1, entrada.length() - 1);
+        if (!subproceso) {
+            textoSalida += texto + "\n";
+        } else {
+            listaSalida.add(texto);
+        }
+    }
+
+    private void escribir() {
+        if(numeroRepetir > 0 && listaSalida.size() > 0){
+            for (int i = 0; i < numeroRepetir; i++) {
+                for (String salida : listaSalida) {
+                    textoSalida += salida + "\n";
+                }
+            }
+        }
+        if (verdadero && listaSalida.size() > 0){
+            textoSalida += listaSalida.get(0) + "\n";
         }
     }
 
@@ -298,25 +372,15 @@ public class AutomataPila {
         return tt == TipoToken.FIN;
     }
 
+    public String getTextoSalida() {
+        return textoSalida;
+    }
+
+    public List<Token> getErrores() {
+        return errores;
+    }
+
     private enum NoTerminal {
         S, S1, S1P, S1BP, S2, S2P, S2BP, S2TP, S2CP, S2QP, S3, S3P, S3BP, S3TP, S4, S5, M, O, ERROR
     }
-
-    private class ErrorSintactico {
-
-        private List<Token> tokensError;
-
-        public ErrorSintactico(List<Token> tokensError) {
-            this.tokensError = tokensError;
-        }
-
-        public List<Token> getTokensError() {
-            return tokensError;
-        }
-
-        public void setTokensError(List<Token> tokensError) {
-            this.tokensError = tokensError;
-        }
-    }
-
 }

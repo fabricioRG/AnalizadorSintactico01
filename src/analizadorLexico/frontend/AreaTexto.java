@@ -2,6 +2,10 @@ package analizadorLexico.frontend;
 
 import analizadorLexico.backend.ManejadorAreaTexto;
 import analizadorLexico.ErrorLexema;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -50,36 +54,36 @@ public class AreaTexto extends javax.swing.JPanel implements KeyListener, MouseL
         jButtonUndo.setEnabled(false);
         jButtonPaste.setEnabled(false);
         jButtonCopy.setEnabled(false);
-        
+
         //Funciones que implementan la funcion "Rehacer" y "Deshacer"
         jEditorPaneTexto.getDocument().addUndoableEditListener(new UndoableEditListener() {
             public void undoableEditHappened(UndoableEditEvent e) {
-            undoManager.addEdit(e.getEdit());
-            updateButtons();
-          }
+                undoManager.addEdit(e.getEdit());
+                updateButtons();
+            }
         });
         jButtonUndo.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        try {
-          undoManager.undo();
-        } catch (CannotRedoException cre) {
-          cre.printStackTrace();
-        }
-        updateButtons();
-        mat.iniciarAutomata();
-      }
-    });
-    jButtonRedo.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        try {
-          undoManager.redo();
-        } catch (CannotRedoException cre) {
-          cre.printStackTrace();
-        }
-        updateButtons();
-        mat.iniciarAutomata();
-      }
-    });
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    undoManager.undo();
+                } catch (CannotRedoException cre) {
+                    cre.printStackTrace();
+                }
+                updateButtons();
+                mat.iniciarAutomata();
+            }
+        });
+        jButtonRedo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    undoManager.redo();
+                } catch (CannotRedoException cre) {
+                    cre.printStackTrace();
+                }
+                updateButtons();
+                mat.iniciarAutomata();
+            }
+        });
     }
 
     /**
@@ -391,14 +395,14 @@ public class AreaTexto extends javax.swing.JPanel implements KeyListener, MouseL
     @Override
     public void mouseExited(MouseEvent e) {
     }
-    
-    public void actualizarErrores(List errores){
+
+    public void actualizarErrores(List errores) {
         this.listaErrorObser.clear();
         this.listaErrorObser.addAll(errores);
     }
-    
+
     //Metodo encargado de actualizar el estado de los botones segun "Undo Manager"
-    public void updateButtons(){
+    public void updateButtons() {
         jButtonUndo.setEnabled(undoManager.canUndo());
         jButtonRedo.setEnabled(undoManager.canRedo());
     }
@@ -410,8 +414,8 @@ public class AreaTexto extends javax.swing.JPanel implements KeyListener, MouseL
     public void setListaErrorObser(ObservableList<ErrorLexema> listaErrorObser) {
         this.listaErrorObser = listaErrorObser;
     }
-    
-    public void mostrarTokens(){
+
+    public void mostrarTokens() {
         mat.mostrarTokens();
     }
 
@@ -438,7 +442,12 @@ public class AreaTexto extends javax.swing.JPanel implements KeyListener, MouseL
     public void setModificado(boolean modificado) {
         this.modificado = modificado;
     }
-    
+
+    public boolean tieneErrores() {
+        return mat.existenErrores();
+    }
+
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCopy;
     private javax.swing.JButton jButtonPaste;

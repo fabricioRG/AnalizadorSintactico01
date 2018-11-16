@@ -5,6 +5,12 @@ import analizadorLexico.frontend.Analizador;
 import analizadorLexico.frontend.archivos.GuardadorArchivo;
 import analizadorLexico.backend.archivos.ManejadorArchivos;
 import analizadorLexico.frontend.archivos.SeleccionadorArchivo;
+import analizadorSintactico.backend.Archivos;
+import analizadorSintactico.backend.AutomataPila;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import javax.swing.ImageIcon;
@@ -22,7 +28,7 @@ public class ManejadorAnalizador {
 
     public ManejadorAnalizador(Analizador analizador) {
         this.analizador = analizador;
-        
+
     }
 
     //Metodo encargado de abrir una ventana en blanco
@@ -94,6 +100,7 @@ public class ManejadorAnalizador {
         }
     }
 
+    //Metodo encargado de guardar un archivo, en el cual dependiendo si ya ha sido guardado o no
     public void guardarArchivo(int i) {
         if (analizador.jTabbedPane.getTitleAt(i).equals(NEW_TAB)) {
             guardarArchivoComo(i, 1);
@@ -175,21 +182,35 @@ public class ManejadorAnalizador {
         }
     }
 
+    //Metodo encargado de cerrar todas las ventanas abiertas
     public void cerrarVentanas(int tamaño) {
         for (int i = tamaño - 1; i >= 0; i--) {
             cerrarVentana(i);
         }
-        if (analizador.getComponentCount() <= 0) {
+        if (analizador.getComponentCount() < 1) {
             System.exit(0);
         }
     }
 
-    public void habilitarAPD(){
-        if(analizador.jTabbedPane.getComponentCount() > 0){
-            analizador.jMenuItemIniciarAPD.setEnabled(true);
+    //Metodo que verifica si es valido habilitar la opcion de iniciar el APD
+    public void habilitarAPD() {
+        if (analizador.jTabbedPane.getComponentCount() > 0) {
+            AreaTexto at = (AreaTexto) analizador.jTabbedPane.getSelectedComponent();
+            if (!at.tieneErrores() && !at.getMat().getPlainText().trim().isEmpty()) {
+                analizador.jMenuItemIniciarAPD.setEnabled(true);
+            } else {
+                analizador.jMenuItemIniciarAPD.setEnabled(false);
+            }
         } else {
             analizador.jMenuItemIniciarAPD.setEnabled(false);
         }
     }
-    
+
+    //Metodo que inicializa el automta de pila, para escribirlo en un archivo de texto o html
+    public void iniciarAPD() {
+        AreaTexto at = (AreaTexto) analizador.jTabbedPane.getSelectedComponent();
+        Archivos archivos = new Archivos(analizador, at);
+        archivos.escribirArchivo();
+    }
+
 }

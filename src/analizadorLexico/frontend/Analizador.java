@@ -224,7 +224,7 @@ public class Analizador extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItemFindActionPerformed
 
     private void jMenuItemIniciarAPDActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemIniciarAPDActionPerformed
-        
+        ma.iniciarAPD();
     }//GEN-LAST:event_jMenuItemIniciarAPDActionPerformed
 
     private void jMenuItemIniciarAPDMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jMenuItemIniciarAPDMouseClicked

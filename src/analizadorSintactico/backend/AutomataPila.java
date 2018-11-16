@@ -14,233 +14,285 @@ public class AutomataPila {
 
     private Stack<Token> pila = null;
     private Stack<TipoToken> pilaLexemas = null;
+    private Stack<TipoToken> pilaSistema = null;
+    private Stack<TipoToken> pilaAuxiliar = null;
+    private List<Token> errores = null;
+    private int counterSystem = 0;
+    private int counterSystemAux = 0;
+    private int counterTemporalSystem = 0;
+    private int counterTemporalSystemAux = 0;
+    private int counterOptions = 0;
+    private boolean subproceso = false;
+    public static final TipoToken[] escribir1 = {TipoToken.FIN, TipoToken.LITERAL, TipoToken.ESCRIBIR};
+    public static final TipoToken[] escribir2 = {TipoToken.FIN, TipoToken.NUMERO, TipoToken.ESCRIBIR};
+    public static final TipoToken[] escribir3 = {TipoToken.FIN, TipoToken.IDENTIFICADOR, TipoToken.ESCRIBIR};
+    public static final TipoToken[] repetir1 = {TipoToken.FIN, TipoToken.INICIAR, TipoToken.NUMERO, TipoToken.REPETIR};
+    public static final TipoToken[] repetir2 = {TipoToken.FIN, TipoToken.INICIAR, TipoToken.IDENTIFICADOR, TipoToken.REPETIR};
+    public static final TipoToken[] condicional1 = {TipoToken.FIN, TipoToken.ENTONCES, TipoToken.VERDADERO, TipoToken.SI};
+    public static final TipoToken[] condicional2 = {TipoToken.FIN, TipoToken.ENTONCES, TipoToken.FALSO, TipoToken.SI};
     private List<Token> tokens = null;
-    private List<ErrorSintactico> errores = null;
-    public final NoTerminal NO_TERMINAL_INICIAL = NoTerminal.S1;
+    private List<ErrorSintactico> errors = null;
+    public static final NoTerminal NO_TERMINAL_INICIAL = NoTerminal.S;
+    public static final TipoToken TIPO_TOKEN_FINAL = TipoToken.FIN;
     private NoTerminal noTerminal = NO_TERMINAL_INICIAL;
-    private Token token = null;
     private int posicion = 0;
-    private int posicionTemporal = 0;
-    private int contador = 0;
-    private int contadorTemporalPila = 0; //Contador utilizado para llevar la posicion en la lectura de los tokens de entrada
-    private int contadorDePila = 0; //Contador utilizado para indicar la posicion del pila de entrada a evaluar
-    private int contadorS = 0; //Contador utilizado por parte del terminal S
-    private int posicionToken = 0;
-    private int estado = 0;
-    private boolean error = false; //Si existe algun errores cambiara a true
     private int option = 0;
-    private boolean done = false;
 
     public AutomataPila(List tokens) {
         this.pila = new Stack<Token>();
         this.pilaLexemas = new Stack<>();
         this.tokens = tokens;
+        this.errors = new LinkedList<>();
+        this.pilaSistema = new Stack<>();
+        this.pilaAuxiliar = new Stack<>();
         this.errores = new LinkedList<>();
     }
 
     /**
-     * Metodo encargado de iniciar el automata, asi tambien se encarga de manejar los posibles
-     * errores que se encuentre con las cadenas de entrada
+     * Metodo encargado de iniciar el automata, asi tambien se encarga de
+     * manejar los posibles errores que se encuentre con las cadenas de entrada
      */
     public void iniciarAPD() {
         try {
-            posicionTemporal = posicion;
             noTerminal = NO_TERMINAL_INICIAL;
-            this.error = false;
-            iniciarProceso();
+            if (counterSystem < tokens.size()) {
+                obtenerPila();
+                counterTemporalSystem = counterSystem;
+                iniciarProceso();
+            } else {
+                System.out.println("##Se ha terminado la lectura##");
+                for (Token err : errores) {
+                    System.out.println("Error: " + err.getTipoToken());
+                }
+            }
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
-            pilaLexemas.clear();
-            this.contador++;
+            pilaSistema.clear();
+            counterOptions++;
+            iniciarAPD();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
             iniciarAPD();
         }
     }
 
     /**
-     * Metodo principal el cual va cambiando de "No Terminal" dependiendo de la cadena de entrada,
-     * el cual es capaz de detectar si una cadena no es correcta, no coincide o no esta completa
+     * Metodo principal el cual va cambiando de "No Terminal" dependiendo de la
+     * cadena de entrada, el cual es capaz de detectar si una cadena no es
+     * correcta, no coincide o no esta completa
      */
-    private void iniciarProceso() {
+    private void iniciarProceso() throws Exception {
         switch (noTerminal) {
             case S:
+                Token token = tokens.get(counterSystem);
+                option = 1;
+                switch (token.getTipoToken()) {
+                    case ESCRIBIR:
+                        noTerminal = NoTerminal.S1;
+                        break;
+                    case REPETIR:
+                        noTerminal = NoTerminal.S2;
+                        break;
+                    case SI:
+                        noTerminal = NoTerminal.S3;
+                        break;
+                    case IDENTIFICADOR:
+                        noTerminal = NoTerminal.S5;
+                        break;
+                    default:
+                        noTerminal = NoTerminal.ERROR;
+                        break;
+                }
+                break;
             case S1:
-                terminal(TipoToken.ESCRIBIR);
+                terminal();
                 option = 1;
                 noTerminal = NoTerminal.S1P;
                 break;
             case S1P:
                 noTerminal = NoTerminal.S1BP;
-                option = 0;
                 iniciarProceso();
-                option = 1;
-                noTerminalFinal();
+                option = 2;
+                terminal();
                 break;
             case S1BP:
-                contadorS = contador;
-                switch (contadorS) {
-                    case 0:
-                        terminal(TipoToken.LITERAL);
-                        break;
-                    case 1:
-                        terminal(TipoToken.NUMERO);
-                        break;
-                    case 2:
-                        terminal(TipoToken.IDENTIFICADOR);
-                        break;
-                    default:
-                        contadorS = 0;
-                        error = true;
-                        noTerminal = NoTerminal.ERROR;
-                        break;
-                }
+                option = 0;
+                terminal();
                 break;
             case ERROR:
-                error = true;
+                error();
+                throw new Exception("Aqui hay un error");
+            case S2:
+                terminal();
+                option = 1;
+                noTerminal = NoTerminal.S2P;
                 break;
-                case S2:
             case S2P:
+                noTerminal = NoTerminal.S2BP;
+                iniciarProceso();
+                noTerminal = NoTerminal.S2TP;
+                break;
             case S2BP:
+                option = 0;
+                terminal();
+                break;
             case S2TP:
+                terminal();
+                option = 1;
+                noTerminal = NoTerminal.S2CP;
+                break;
             case S2CP:
+                
             case S2QP:
+            
             case S3:
+                terminal();
+                option = 1;
+                noTerminal = NoTerminal.S3P;
+                break;
             case S3P:
+                option = 0;
+                noTerminal = NoTerminal.S3BP;
+                iniciarProceso();
+                terminal();
+                option = 1;
+                noTerminal = NoTerminal.S3TP;
+                break;
             case S3BP:
+                option = 0;
+                terminal();
+                break;
             case S3TP:
+                Token tok = tokens.get(counterTemporalSystem);
+                if (tok.getTipoToken() == TipoToken.ESCRIBIR) {
+                    counterSystem = counterTemporalSystem;
+                    subproceso = true;
+                    iniciarAPD();
+                }
+                pilaSistema.push(TIPO_TOKEN_FINAL);
+                option = 2;
+                terminal();
+                subproceso = false;
+                break;
             case S4:
             case S5:
         }
         if (option == 1) {
             iniciarProceso();
-        } else if (option == 2 || option == 3) {
+        }
+        if (option == 2 || option == 3) {
             if (option == 2) {
                 System.out.println("########Cadena correcta########");
+                counterOptions = 0;
             } else if (option == 3) {
                 System.out.println("######Cadena no correcta######");
-                agregarError(null);
             }
-            if (contadorDePila >= tokens.size()) {
-                System.out.println("##Se ha terminado la lectura##");
-                for (ErrorSintactico error : errores) {
-                    System.out.println("####################");
-                    for (Token token1 : error.getTokensError()) {
-                        System.out.println(token1.getTipoToken());
+            counterSystem = counterTemporalSystem;
+            if (!subproceso) {
+                if (counterSystem >= tokens.size()) {
+                    System.out.println("##Se ha terminado la lectura##");
+                    for (Token err : errores) {
+                        System.out.println("Error: " + err.getTipoToken());
                     }
+                } else {
+                    iniciarAPD();
                 }
-            } else {
-                iniciarAPD();
             }
         }
-    }
-    
-    //Metodo utilizado unicamente si el TipoToken es final, el cual se encarga de verificar errores y otras procesos
-    private void noTerminalFinal() {
-        if (iniciarPila() && !error) {
-            terminal(TipoToken.FIN);
-            option = 2;
-            desapilar();
-            contador = 0;
-        } else {
-            option = 3;
-        }
-    }
-    
-    /**
-     * Metodo que agrega en una pila "pila" los tokens de entrada, siempre y cuando estos cumplan con las
-     * condiciones de tener un TipoToken inicial y uno final, de lo contrario se tomara como error y se retornara
-     * como valor boolean "false", pero si no se encuentra ningun error entonces se retorna "true"
-     * @return 
-     */
-    private boolean iniciarPila() {
-        pila.clear();
-        List<Token> error = new LinkedList<>();
-        int contador = contadorDePila;
-        if (contador < tokens.size()) { //Se verifica que el tamaño del contador sea menor a la longitud de la lista de entrada
-            if (esTipoTokenInicial(tokens.get(contador).getTipoToken())) { //Si es un TipoToken definido como inicial se inicia el proceso
-                System.out.println(pila.push(tokens.get(contador)).getTipoToken()); //Se agrega a la pila "pila" lo que se vaya leyendo
-                while (!esTipoTokenFinal(tokens.get(contador).getTipoToken())) { //Reconocer tokens hasta que se encuentre un TipoToken final
-                    contador++;
-                    if((contador >= tokens.size())){
-                        contadorTemporalPila = contador;
-                        return false;
-                    } else if (esTipoTokenInicial(tokens.get(contador).getTipoToken())){ //
-                        contadorTemporalPila = contador -1;
-                        return false;
-                    }
-                    System.out.println(pila.push(tokens.get(contador)).getTipoToken());
-                }
-                contadorTemporalPila = contador;
-                return true;
-            } else {
-                while (!esTipoTokenInicial(tokens.get(contador).getTipoToken()) && !(contador >= tokens.size())) {
-                    error.add(tokens.get(contador));
-                    contador++;
-                }
-                ErrorSintactico es = new ErrorSintactico(error);
-                contadorTemporalPila = contador - 1;
-                agregarError(es);
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-    
-    //Metodo cuya funcion es apilar en "pilaLexemas" el TipoToken de parametro y aumentar el contador "posicionTemporal"
-    private void terminal(TipoToken tt) {
-        System.out.println(pilaLexemas.push(tt));
     }
 
-    /**
-     * Metodo que compara dos pilas, la primera que contiene los tokens de entrada y la segunda que contiene
-     * una pila de TipoTokens generados por el automata de pila
-     * Puede contener errores, pues es posible que no conicidan las dos pilas, por lo que es atrapado en el metodo inicial
-     * @throws ArrayIndexOutOfBoundsException 
-     */
-    private void desapilar() throws ArrayIndexOutOfBoundsException {
-        int contInterno = posicionToken;
-        while (!pilaLexemas.isEmpty()) {
-            if (pila.peek().getTipoToken() == pilaLexemas.peek()) { //Compara los TipoToken de los Tokens
-                System.out.println(pilaLexemas.pop());
-                System.out.println(pila.pop().getTipoToken());
+    private void obtenerPila() throws Exception {
+        Token token = tokens.get(counterSystem);
+        switch (token.getTipoToken()) {
+            case ESCRIBIR:
+                switch (counterOptions) {
+                    case 0:
+                        crearPila(escribir1);
+                        break;
+                    case 1:
+                        crearPila(escribir2);
+                        break;
+                    case 2:
+                        crearPila(escribir3);
+                        break;
+                    default:
+                        counterSystem++;
+                        counterOptions = 0;
+                        errores.add(token);
+                        throw new Exception("Se encontro un nuevo error");
+                }
+                break;
+            case REPETIR:
+                switch (counterOptions) {
+                    case 0:
+                        crearPila(repetir1);
+                        break;
+                    case 1:
+                        crearPila(repetir2);
+                        break;
+                    default:
+                        break;
+
+                }
+                break;
+            case SI:
+                switch (counterOptions) {
+                    case 0:
+                        crearPila(condicional1);
+                        break;
+                    case 1:
+                        crearPila(condicional2);
+                        break;
+                    default:
+                        counterSystem++;
+                        counterOptions = 0;
+                        errores.add(token);
+                        throw new Exception("Se encontro un nuevo error");
+                }
+                break;
+//            case IDENTIFICADOR:
+//                break;
+            default:
+                counterSystem++;
+                errores.add(token);
+                throw new Exception("Se encontro un nuevo error!!!");
+        }
+    }
+
+    private void crearPila(TipoToken[] tt) {
+        pilaSistema.clear();
+        for (int i = 0; i < tt.length; i++) {
+            System.out.println(pilaSistema.push(tt[i]));
+        }
+    }
+
+    private void terminal() throws ArrayIndexOutOfBoundsException, Exception {
+        if (counterTemporalSystem < tokens.size()) {
+            Token token = tokens.get(counterTemporalSystem);
+            System.out.println(token.getTipoToken());
+            if (pilaSistema.peek() == token.getTipoToken()) {
+                pilaSistema.pop();
+                counterTemporalSystem++;
             } else {
+                counterTemporalSystem++;
                 throw new ArrayIndexOutOfBoundsException("/////Coincidencia no correcta\\\\\\\\\\");
             }
+        } else {
+            errores.add(tokens.get(counterSystem));
+            counterSystem++;
+            throw new Exception("////Nuevo error\\\\\\\\");
         }
-        posicionToken = contInterno;
-        contadorDePila = contadorTemporalPila + 1;
-        posicion = posicionTemporal;
     }
 
-    /**
-     * Metodo que recibe como parametro un objeto ErrorSintactico el cual se agrega a una lista de
-     * ErrorSintactico para guardar los errores obtenidos en los procesos anteriores y de esta manera tener
-     * una mas adecuada de mostrar los errores existentes
-     * @param es 
-     */
-    private void agregarError(ErrorSintactico es) {
-        if (es == null) { //Si el parametro es nulo se procede a crear una lista de errores
-            List<Token> error = new LinkedList<>();
-            for (Token token1 : pila) {
-                error.add(token1);
-            }
-            ErrorSintactico eS = new ErrorSintactico(error); //Se crea un objeto ErrorSintactico que contendra estos errores
-            this.errores.add(eS);
-            contadorTemporalPila++;
-        } else {
-            this.errores.add(es); //Si no es nulo se agrega el parametro a la lista de errores glabal en el sistema
-        }
-        contadorDePila = contadorTemporalPila;
-        pilaLexemas.clear();
-        this.contador = 0;
-        option = 3;
+    private void error() {
+
     }
 
     //Retorna verdadero si el parametro coincide con alguno de los TipoToken definidos como Iniciales
     private boolean esTipoTokenInicial(TipoToken tt) {
         return tt == TipoToken.ESCRIBIR;
     }
-    
+
     //Retorna verdadero si el parametro coincide con alguno de los TipoToken definidos como Finales
     private boolean esTipoTokenFinal(TipoToken tt) {
         return tt == TipoToken.FIN;
